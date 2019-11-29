@@ -5,10 +5,10 @@
   "main": "main.js",
   "dependencies": {
     "pdf-lib": "^1.2.1",
-    "puppeteer": "^2.0.0",
-    "typescript": "^3.7.2"
+    "puppeteer": "^2.0.0"
   },
   "devDependencies": {
+    "typescript": "^3.7.2",
     "@pdf-lib/standard-fonts": "0.0.4",
     "@types/node": "^12.12.14",
     "@types/puppeteer": "^2.0.0"
