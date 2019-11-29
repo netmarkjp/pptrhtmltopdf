@@ -1,0 +1,29 @@
+{
+  "name": "pptrhtmltopdf",
+  "version": "1.0.0",
+  "description": "# Usage",
+  "main": "main.js",
+  "dependencies": {
+    "pdf-lib": "^1.2.1",
+    "puppeteer": "^2.0.0",
+    "typescript": "^3.7.2"
+  },
+  "devDependencies": {
+    "@pdf-lib/standard-fonts": "0.0.4",
+    "@types/node": "^12.12.14",
+    "@types/puppeteer": "^2.0.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/netmarkjp/pptrhtmltopdf.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/netmarkjp/pptrhtmltopdf/issues"
+  },
+  "homepage": "https://github.com/netmarkjp/pptrhtmltopdf#readme"
+}
