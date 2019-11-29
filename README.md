@@ -3,7 +3,13 @@
 # Usage
 
 ```
-node main.js \
+# build
+npm run-script build
+```
+
+```
+# run
+npm run-script run \
     --cover=/path/to/cover.html \
     --backcover=/path/to/backcover.html \
     --footer="[currentPage]/[totalPage]" \
