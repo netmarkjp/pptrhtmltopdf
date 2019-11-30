@@ -31,15 +31,14 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
     return [opts, args];
 }
 
-async function renderPages(filepaths: string[], tmpPath: string, pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
+async function renderPages(urls: string[], tmpPath: string, pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
     let fileIndex: number = 0;
     const browser = await puppeteer.launch();
-    for (let filepath of filepaths) {
+    for (let url of urls) {
         let outFileNumber = ("0000" + fileIndex).slice(-3);
         let tmpPDF: TmpPDF = {};
 
         const page = await browser.newPage();
-        let url = "file://" + filepath;
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         let outPath = path.join(tmpPath, outFileNumber + ".pdf");
@@ -72,13 +71,18 @@ function main(argv: string[]): void {
     let o = argParse(argv);
     // TODO use opts
     //let opts = o[0];
-    let files: string[] = [];
-    for (let file of o[1]) {
-        if (!path.isAbsolute(file)) {
-            file = path.resolve(file);
+    let urls: string[] = [];
+    for (let url of o[1]) {
+        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+            if (!path.isAbsolute(url)) {
+                url = path.resolve(url);
+            }
+            url = "file://" + url;
         }
-        files.push(file);
+        urls.push(url);
+
     }
+    console.log("=> urls: " + urls);
 
     let pdfOptions: PDFOptions = {};
     pdfOptions.format = "A4";
@@ -86,7 +90,7 @@ function main(argv: string[]): void {
 
     let tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), 'pptrhtmltopdf-'));
     let tmpPDFs: TmpPDF[] = [];
-    renderPages(files, tmpDir, pdfOptions, tmpPDFs).then(() => {
+    renderPages(urls, tmpDir, pdfOptions, tmpPDFs).then(() => {
         countPageNumbers(tmpPDFs).then(() => {
             console.log("---");
             for (let tmpPDF of tmpPDFs) {
