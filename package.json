@@ -5,6 +5,7 @@
   "main": "main.js",
   "dependencies": {
     "pdf-lib": "^1.2.1",
+    "pdf-text-extract": "^1.5.0",
     "puppeteer": "^2.0.0"
   },
   "devDependencies": {

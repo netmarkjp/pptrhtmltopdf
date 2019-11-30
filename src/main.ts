@@ -3,12 +3,14 @@ import os, { } from "os";
 import path, { } from "path";
 import fs, { } from "fs";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+// import extract, {} from "pdf-text-extract";
+const extract = require("pdf-text-extract");
 
 type TmpPDF = {
     path?: string
     pages?: number
     title?: string
-    headers?: [string, string][]
+    headers?: [string, string, number][]
 }
 
 type Config = {
@@ -17,12 +19,14 @@ type Config = {
     cover?: string
     backcover?: string
     tmpPath: string
+    generateTOC: boolean
 }
 
 const CONFIG: Config = {
     debug: false,
     output: "output.pdf",
     tmpPath: os.tmpdir(),
+    generateTOC: false,
 };
 
 function argParse(argv: string[]): [Map<string, string>, string[]] {
@@ -85,10 +89,10 @@ async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs
         }
         tmpPDF.title = titleText;
 
-        let tmpHeaders: [string, string][] = [];
+        let tmpHeaders: [string, string, number][] = [];
         const headers = await page.$$("h1, h2");
         for (let header of headers) {
-            const tmpHeader: [string, string] = ["", ""];
+            const tmpHeader: [string, string, number] = ["", "", 0];
             const t = await header.getProperty("tagName");
             const tagName = await t.jsonValue();
             if (typeof tagName === "string" && tagName.toLowerCase() === "h1") {
@@ -107,6 +111,29 @@ async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs
             }
             tmpHeaders.push(tmpHeader);
         }
+
+        await extract(tmpPDF.path, (err: any, pagesContents: any) => {
+            //console.log(pageContents);
+            if (err) {
+                console.log(err);
+            }
+
+            for (let pageNumber = 1; pageNumber <= pagesContents.length; pageNumber++) {
+                const perpageContents = pagesContents[pageNumber - 1];
+                for (const line of perpageContents.split("\n")) {
+                    console.log(line);
+                    for (let i = 0; i < tmpHeaders.length; i++) {
+                        if (tmpHeaders[i][2] !== 0) {
+                            continue
+                        }
+                        if (line.trim() == tmpHeaders[i][1]) {
+                            tmpHeaders[i][2] = pageNumber;
+                        }
+                    }
+                }
+            }
+        });
+
         tmpPDF.headers = tmpHeaders;
 
         returnTmpPDFs.push(tmpPDF);
@@ -279,6 +306,9 @@ function main(argv: string[]): void {
         if (val !== undefined) {
             CONFIG.backcover = reformURL(val);
         }
+    }
+    if (opts.has("--generate-toc")) {
+        CONFIG.generateTOC = true;
     }
 
 
