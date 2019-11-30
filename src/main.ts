@@ -2,7 +2,7 @@ import puppeteer, { PDFOptions } from 'puppeteer';
 import os, { } from "os";
 import path, { } from "path";
 import fs, { } from "fs";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 let DEBUG: boolean = false;
 
@@ -108,6 +108,44 @@ async function countPageNumbers(tmpPDFs: TmpPDF[]) {
     }
 }
 
+async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
+    let totalPages: number = 0;
+    for (let tmpPDF of tmpPDFs) {
+        if (tmpPDF.path === undefined) {
+            continue;
+        }
+        if (tmpPDF.pages) {
+            totalPages += tmpPDF.pages;
+        }
+    }
+
+    let currentPage: number = 1;
+    for (let tmpPDF of tmpPDFs) {
+        if (tmpPDF.path === undefined) {
+            continue;
+        }
+        const pdf = await PDFDocument.load(fs.readFileSync(tmpPDF.path));
+        const font = await pdf.embedFont(StandardFonts.Courier);
+        const pages = pdf.getPages();
+        for (const page of pages) {
+            const { width, height } = page.getSize();
+            if (DEBUG) {
+                console.log("DEBUG: width=" + width + ", heigth=" + height);
+            }
+            page.drawText("" + currentPage + " / " + totalPages + "", {
+                x: width - 50,
+                y: 10,
+                size: 11,
+                font: font,
+                color: rgb(0.3, 0.3, 0.3),
+            });
+            currentPage++;
+        }
+        const pdfBytes = await pdf.save();
+        fs.writeFileSync(tmpPDF.path, pdfBytes);
+    }
+}
+
 function main(argv: string[]): void {
     const o = argParse(argv);
     // TODO use opts
@@ -146,6 +184,11 @@ function main(argv: string[]): void {
                     console.log(tmpPDF);
                 }
             }
+            printHeaderFooter(tmpPDFs).then(() => {
+                if (DEBUG) {
+                    console.log("DEBUG: ");
+                }
+            });
         });
     });
 }
