@@ -113,7 +113,6 @@ async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs
         }
 
         await extract(tmpPDF.path, (err: any, pagesContents: any) => {
-            //console.log(pageContents);
             if (err) {
                 console.log(err);
             }
@@ -121,7 +120,6 @@ async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs
             for (let pageNumber = 1; pageNumber <= pagesContents.length; pageNumber++) {
                 const perpageContents = pagesContents[pageNumber - 1];
                 for (const line of perpageContents.split("\n")) {
-                    console.log(line);
                     for (let i = 0; i < tmpHeaders.length; i++) {
                         if (tmpHeaders[i][2] !== 0) {
                             continue
@@ -209,6 +207,73 @@ async function renderCovers(pdfOptions: PDFOptions) {
     }
 }
 
+async function renderTOC(pdfOptions: PDFOptions, tmpPDFs: TmpPDF[]) {
+    const tocHTMLFile = path.join(CONFIG.tmpPath, "toc.html");
+    // TODO generate TOC HTML
+
+    const tocElements: string[] = [];
+
+    tocElements.push("<!DOCTYPE html>");
+    tocElements.push("<html lang='en' class='no-js'>");
+    tocElements.push("<head>");
+    tocElements.push("<meta charset='utf-8'>");
+    tocElements.push("<meta name='lang:search.language' content='en'>");
+    const style = `
+        <style>
+        h1 {
+            text-align:center;
+        }
+        .toc {
+            margin: 0.5em;
+            border-bottom: dotted 2px;
+        }
+        .toc-h1 {
+            font-size: larger;
+            margin-left: 2em;
+        }
+        .toc-h2 {
+            margin-left: 3em;
+        }
+        .toc .pageNumber {
+            float:right
+        }
+        </style>
+    `
+    tocElements.push(style);
+    tocElements.push("</head>");
+    tocElements.push("<body dir='ltr'>");
+    tocElements.push("<h1>Table of Contents</h1>");
+
+    let pageOffset: number = 0;
+    for (const tmpPDF of tmpPDFs) {
+        if (tmpPDF.headers === undefined) {
+            continue
+        }
+        for (const header of tmpPDF.headers) {
+            tocElements.push("<div class='toc toc-" + header[0] + "'><span class='description'>" + header[1] + "</span><span class='pageNumber'>" + (pageOffset + header[2]) + "</span></div>");
+        }
+        if (tmpPDF.pages !== undefined) {
+            pageOffset += tmpPDF.pages;
+        }
+    }
+    tocElements.push("</body>");
+    tocElements.push("</html>");
+
+    const tocHTMLBody = tocElements.join("\n");
+    fs.writeFileSync(tocHTMLFile, tocHTMLBody, { encoding: "utf-8" });
+
+    // render and save PDF
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(reformURL(tocHTMLFile), { waitUntil: 'networkidle2' });
+
+    const outPath = path.join(CONFIG.tmpPath, "toc.pdf");
+    pdfOptions.path = outPath;
+    await page.pdf(pdfOptions);
+
+    await browser.close();
+}
+
 async function concatPDF(tmpPDFs: TmpPDF[]) {
     let basePDF: PDFDocument;
     let basePDFpath = tmpPDFs[0].path;
@@ -239,7 +304,19 @@ async function concatPDF(tmpPDFs: TmpPDF[]) {
         }
     }
 
-    // TODO insert toc
+    if (CONFIG.generateTOC) {
+        const pdf = await PDFDocument.load(fs.readFileSync(path.join(CONFIG.tmpPath, "toc.pdf")));
+        let pageIndexes: number[] = [];
+        for (let i = 0; i < pdf.getPageCount(); i++) {
+            pageIndexes.push(i);
+        }
+
+        const pages = await basePDF.copyPages(pdf, pageIndexes);
+        for (let i = pages.length - 1; i >= 0; i--) {
+            const page = pages[i];
+            basePDF.insertPage(0, page);
+        }
+    }
 
     if (CONFIG.cover !== undefined) {
         const pdf = await PDFDocument.load(fs.readFileSync(path.join(CONFIG.tmpPath, "cover.pdf")));
@@ -311,7 +388,6 @@ function main(argv: string[]): void {
         CONFIG.generateTOC = true;
     }
 
-
     const urls: string[] = [];
     for (const url of o[1]) {
         urls.push(reformURL(url));
@@ -341,8 +417,10 @@ function main(argv: string[]): void {
             }
             printHeaderFooter(tmpPDFs).then(() => {
                 renderCovers(pdfOptions).then(() => {
-                    concatPDF(tmpPDFs).then(() => {
-                        console.log("Wrote PDF to: " + CONFIG.output);
+                    renderTOC(pdfOptions, tmpPDFs).then(() => {
+                        concatPDF(tmpPDFs).then(() => {
+                            console.log("Wrote PDF to: " + CONFIG.output);
+                        });
                     });
                 });
             });
