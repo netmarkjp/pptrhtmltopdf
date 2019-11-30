@@ -15,6 +15,7 @@ npm run-script run -- \
     --backcover=/path/to/backcover.html \
     --footer="[currentPage]/[totalPage]" \
     --generate-toc \
+    --output=/path/to/output.pdf \
     /path/to/i.html \
     /path/to/ii.html \
     /path/to/iii.html
@@ -48,4 +49,10 @@ NOTE:
 7. Concat PDF
     - [tmp]/cover.pdf, [tmp]/toc.pdf, [tmp]/0001.pdf, [tmp]/0002.pdf, ..., [tmp]/backcover.pdf
 
+# TODO
 
+- Generate TOC
+- Print h1/h2 in TOC
+- Footer formatting
+- Header
+- PDF page size customise

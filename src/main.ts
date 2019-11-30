@@ -4,14 +4,24 @@ import path, { } from "path";
 import fs, { } from "fs";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-let DEBUG: boolean = false;
-
 type TmpPDF = {
     path?: string
     pages?: number
     title?: string
     headers?: [string, string][]
 }
+
+type Config = {
+    debug: boolean
+    output: string
+    cover?: string
+    backcover?: string
+}
+
+const CONFIG: Config = {
+    debug: false,
+    output: "output.pdf",
+};
 
 function argParse(argv: string[]): [Map<string, string>, string[]] {
     let args: string[] = [];
@@ -48,7 +58,7 @@ async function renderPages(urls: string[], tmpPath: string, pdfOptions: PDFOptio
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         const outPath = path.join(tmpPath, outFileNumber + ".pdf");
-        if (DEBUG) {
+        if (CONFIG.debug) {
             console.log("DEBUG: tmpPDF.path=" + outPath);
         }
 
@@ -129,7 +139,7 @@ async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
         const pages = pdf.getPages();
         for (const page of pages) {
             const { width, height } = page.getSize();
-            if (DEBUG) {
+            if (CONFIG.debug) {
                 console.log("DEBUG: width=" + width + ", heigth=" + height);
             }
             page.drawText("" + currentPage + " / " + totalPages + "", {
@@ -146,27 +156,106 @@ async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
     }
 }
 
+async function renderPage(url: string, tmpPath: string, filename: string, pdfOptions: PDFOptions) {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto(url, { waitUntil: 'networkidle2' });
+
+    const outPath = path.join(tmpPath, filename);
+    pdfOptions.path = outPath;
+    await page.pdf(pdfOptions);
+
+    await browser.close();
+}
+
+async function renderCovers(tmpPath: string, pdfOptions: PDFOptions) {
+    if (CONFIG.cover !== undefined) {
+        await renderPage(CONFIG.cover, tmpPath, "cover.pdf", pdfOptions);
+    }
+    if (CONFIG.backcover !== undefined) {
+        await renderPage(CONFIG.backcover, tmpPath, "backcover.pdf", pdfOptions);
+    }
+}
+
+async function concatPDF(tmpPDFs: TmpPDF[]) {
+    let basePDF: PDFDocument;
+    let basePDFpath = tmpPDFs[0].path;
+    if (basePDFpath === undefined) {
+        basePDF = await PDFDocument.create();
+        console.log("INFO: Finally create new PDFDocument!");
+    } else {
+        // ususal case
+        basePDF = await PDFDocument.load(fs.readFileSync(basePDFpath));
+    }
+
+    for (const tmpPDF of tmpPDFs) {
+        if (tmpPDF.path === undefined) {
+            continue;
+        }
+        if (tmpPDF.path === basePDFpath) {
+            continue;
+        }
+        const pdf = await PDFDocument.load(fs.readFileSync(tmpPDF.path));
+        let pageIndexes: number[] = [];
+        for(let i = 0; i < pdf.getPageCount(); i++){
+            pageIndexes.push(i);
+        }
+        const pages = await basePDF.copyPages(pdf, pageIndexes);
+        
+        for(const page of pages){
+            basePDF.addPage(page);
+        }
+    }
+
+    // TODO insert cover, toc
+    // TODO add backcover
+    const pdfBytes = await basePDF.save();
+    fs.writeFileSync(CONFIG.output, pdfBytes);
+}
+
+function reformURL(url: string): string {
+    if (!(url.startsWith("http://") || url.startsWith("https://"))) {
+        if (!path.isAbsolute(url)) {
+            url = path.resolve(url);
+        }
+        url = "file://" + url;
+    }
+    return url;
+}
+
 function main(argv: string[]): void {
     const o = argParse(argv);
-    // TODO use opts
+
     const opts: Map<string, string> = o[0];
     if (opts.has("--debug")) {
-        DEBUG = true;
+        CONFIG.debug = true;
         console.log("DEBUG: enabled");
     }
-
-    let urls: string[] = [];
-    for (let url of o[1]) {
-        if (!(url.startsWith("http://") || url.startsWith("https://"))) {
-            if (!path.isAbsolute(url)) {
-                url = path.resolve(url);
-            }
-            url = "file://" + url;
+    if (opts.has("--output")) {
+        const val = opts.get("--output");
+        if (val !== undefined) {
+            CONFIG.output = val;
         }
-        urls.push(url);
-
     }
-    if (DEBUG) {
+    if (opts.has("--cover")) {
+        const val = opts.get("--cover");
+        if (val !== undefined) {
+            CONFIG.cover = reformURL(val);
+        }
+    }
+    if (opts.has("--backcover")) {
+        const val = opts.get("--backcover");
+        if (val !== undefined) {
+            CONFIG.backcover = reformURL(val);
+        }
+    }
+
+
+    const urls: string[] = [];
+    for (const url of o[1]) {
+        urls.push(reformURL(url));
+    }
+    if (CONFIG.debug) {
         console.log("DEBUG: urls=" + urls);
     }
 
@@ -174,20 +263,21 @@ function main(argv: string[]): void {
     pdfOptions.format = "A4";
     pdfOptions.printBackground = true;
 
-    let tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), 'pptrhtmltopdf-'));
+    let tmpPath: string = fs.mkdtempSync(path.join(os.tmpdir(), 'pptrhtmltopdf-'));
     let tmpPDFs: TmpPDF[] = [];
-    renderPages(urls, tmpDir, pdfOptions, tmpPDFs).then(() => {
+    renderPages(urls, tmpPath, pdfOptions, tmpPDFs).then(() => {
         countPageNumbers(tmpPDFs).then(() => {
-            if (DEBUG) {
+            if (CONFIG.debug) {
                 for (let tmpPDF of tmpPDFs) {
                     console.log("DEBUG: tmpPDF=");
                     console.log(tmpPDF);
                 }
             }
             printHeaderFooter(tmpPDFs).then(() => {
-                if (DEBUG) {
-                    console.log("DEBUG: ");
-                }
+                renderCovers(tmpPath, pdfOptions).then(() => {
+                        concatPDF(tmpPDFs);
+                        console.log("Wrote PDF to: " + CONFIG.output);
+                });
             });
         });
     });
