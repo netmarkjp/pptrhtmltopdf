@@ -2,6 +2,13 @@ import puppeteer, { PDFOptions } from 'puppeteer';
 import os, { } from "os";
 import path, { } from "path";
 import fs, { } from "fs";
+import { PDFDocument } from "pdf-lib";
+
+type TmpPDF = {
+    path?: string
+    pages?: number
+    title?: string
+}
 
 function argParse(argv: string[]): [Map<string, string>, string[]] {
     let args: string[] = [];
@@ -24,11 +31,12 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
     return [opts, args];
 }
 
-async function renderPages(filepaths: string[], tmpPath: string, pdfOptions: PDFOptions) {
+async function renderPages(filepaths: string[], tmpPath: string, pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
     let fileIndex: number = 0;
     const browser = await puppeteer.launch();
     for (let filepath of filepaths) {
         let outFileNumber = ("0000" + fileIndex).slice(-3);
+        let tmpPDF: TmpPDF = {};
 
         const page = await browser.newPage();
         let url = "file://" + filepath;
@@ -38,11 +46,26 @@ async function renderPages(filepaths: string[], tmpPath: string, pdfOptions: PDF
         console.log(outPath);
 
         pdfOptions.path = outPath;
+        tmpPDF.path = outPath;
         await page.pdf(pdfOptions);
 
+        // TODO get title from page, put them to tmpPDF
+        // TODO get h1, h2 elements from page to tmpPDF
+
+        returnTmpPDFs.push(tmpPDF);
         fileIndex++;
     }
     await browser.close();
+}
+
+async function countPageNumbers(tmpPDFs: TmpPDF[]) {
+    for (let tmpPDF of tmpPDFs) {
+        if (tmpPDF.path === undefined) {
+            continue;
+        }
+        let pdf = await PDFDocument.load(fs.readFileSync(tmpPDF.path));
+        tmpPDF.pages = pdf.getPageCount();
+    }
 }
 
 function main(argv: string[]): void {
@@ -62,7 +85,18 @@ function main(argv: string[]): void {
     pdfOptions.printBackground = true;
 
     let tmpDir: string = fs.mkdtempSync(path.join(os.tmpdir(), 'pptrhtmltopdf-'));
-    renderPages(files, tmpDir, pdfOptions);
+    let tmpPDFs: TmpPDF[] = [];
+    renderPages(files, tmpDir, pdfOptions, tmpPDFs).then(() => {
+        countPageNumbers(tmpPDFs).then(() => {
+            console.log("---");
+            for (let tmpPDF of tmpPDFs) {
+                console.log(tmpPDF);
+            }
+            console.log("---");
+        });
+    });
+
+
 }
 
 main(process.argv);
