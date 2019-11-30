@@ -64,6 +64,12 @@ async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs
             console.log("DEBUG: tmpPDF.path=" + outPath);
         }
 
+        pdfOptions.margin = {
+            top: 20,
+            left: 20,
+            right: 20,
+            bottom: 20, // bottom is truly required for footer.
+        };
         pdfOptions.path = outPath;
         tmpPDF.path = outPath;
         await page.pdf(pdfOptions);
@@ -79,7 +85,6 @@ async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs
         }
         tmpPDF.title = titleText;
 
-        // TODO get title from page, put them to tmpPDF
         let tmpHeaders: [string, string][] = [];
         const headers = await page.$$("h1, h2");
         for (let header of headers) {
@@ -306,7 +311,7 @@ function main(argv: string[]): void {
             }
             printHeaderFooter(tmpPDFs).then(() => {
                 renderCovers(pdfOptions).then(() => {
-                    concatPDF(tmpPDFs).then(()=> {
+                    concatPDF(tmpPDFs).then(() => {
                         console.log("Wrote PDF to: " + CONFIG.output);
                     });
                 });
