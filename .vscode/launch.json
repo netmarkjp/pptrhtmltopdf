@@ -17,6 +17,7 @@
                 "${workspaceFolder}/dist/**/*.js"
             ],
             "args": [
+                "--debug=y",
                 "tmp/build/index.html",
                 "tmp/build/chapter01/index.html",
                 "https://www.yahoo.co.jp"

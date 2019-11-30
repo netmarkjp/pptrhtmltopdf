@@ -4,6 +4,8 @@ import path, { } from "path";
 import fs, { } from "fs";
 import { PDFDocument } from "pdf-lib";
 
+let DEBUG: boolean = false;
+
 type TmpPDF = {
     path?: string
     pages?: number
@@ -16,19 +18,22 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
     let opts: Map<string, string> = new Map();
     let argvStartIndex: number = 2;
     let argvIndex: number = 0;
-    for (let arg of argv) {
+    for (const arg of argv) {
         if (argvIndex < argvStartIndex) {
             argvIndex++;
             continue;
         }
         if (arg.startsWith("--")) {
             // opts
-            opts.set(arg.split("=")[0], arg.split("=")[1]);
+            const key = arg.split("=")[0];
+            const value = arg.split("=")[1];
+            opts.set(key, value);
         } else {
             // args
             args.push(arg);
         }
     }
+
     return [opts, args];
 }
 
@@ -43,7 +48,9 @@ async function renderPages(urls: string[], tmpPath: string, pdfOptions: PDFOptio
         await page.goto(url, { waitUntil: 'networkidle2' });
 
         const outPath = path.join(tmpPath, outFileNumber + ".pdf");
-        console.log(outPath);
+        if (DEBUG) {
+            console.log("DEBUG: tmpPDF.path=" + outPath);
+        }
 
         pdfOptions.path = outPath;
         tmpPDF.path = outPath;
@@ -102,9 +109,14 @@ async function countPageNumbers(tmpPDFs: TmpPDF[]) {
 }
 
 function main(argv: string[]): void {
-    let o = argParse(argv);
+    const o = argParse(argv);
     // TODO use opts
-    //let opts = o[0];
+    const opts: Map<string, string> = o[0];
+    if (opts.get("--debug")) {
+        DEBUG = true;
+        console.log("DEBUG: enabled");
+    }
+
     let urls: string[] = [];
     for (let url of o[1]) {
         if (!(url.startsWith("http://") || url.startsWith("https://"))) {
@@ -116,7 +128,9 @@ function main(argv: string[]): void {
         urls.push(url);
 
     }
-    console.log("=> urls: " + urls);
+    if (DEBUG) {
+        console.log("DEBUG: urls=" + urls);
+    }
 
     let pdfOptions: PDFOptions = {};
     pdfOptions.format = "A4";
@@ -126,11 +140,12 @@ function main(argv: string[]): void {
     let tmpPDFs: TmpPDF[] = [];
     renderPages(urls, tmpDir, pdfOptions, tmpPDFs).then(() => {
         countPageNumbers(tmpPDFs).then(() => {
-            console.log("---");
-            for (let tmpPDF of tmpPDFs) {
-                console.log(tmpPDF);
+            if (DEBUG) {
+                for (let tmpPDF of tmpPDFs) {
+                    console.log("DEBUG: tmpPDF=");
+                    console.log(tmpPDF);
+                }
             }
-            console.log("---");
         });
     });
 }

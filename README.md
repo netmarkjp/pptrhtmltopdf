@@ -9,7 +9,7 @@ npm run-script build
 
 ```
 # run
-npm run-script run \
+npm run-script run -- \
     --cover=/path/to/cover.html \
     --backcover=/path/to/backcover.html \
     --footer="[currentPage]/[totalPage]" \
@@ -27,11 +27,12 @@ NOTE:
 
 1. Render pages, set with args.
     1. render /path/to/i.html => [tmp]/0001.pdf
+        - pick "title", "h1, h2"
     2. render /path/to/ii.html => [tmp]/0002.pdf
     3. render /path/to/iii.html => [tmp]/0003.pdf
 2. Count each PDF's pages
     - 0001.pdf=4pages, 0002.pdf=2pages, ...
-3. Find h1, h2 text and page number
+3. Find h1, h2 's page number **TODO**
     - 0001.pdf: h1:Abstract: p.1, h2:My Story: p.3, ...
     - 0002.pdf: h1:Beginning: p.1, h2:In my baby days: p.1, ...
     - ...
