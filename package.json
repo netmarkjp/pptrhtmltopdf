@@ -1,7 +1,7 @@
 {
   "name": "pptrhtmltopdf",
   "version": "1.0.0",
-  "description": "# Usage",
+  "description": "Convert HTML to PDF using Chrome (Puppeteer)",
   "main": "main.js",
   "dependencies": {
     "pdf-lib": "^1.2.1",
@@ -22,8 +22,8 @@
     "type": "git",
     "url": "git+ssh://git@github.com/netmarkjp/pptrhtmltopdf.git"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Toshiaki Baba<toshiaki@netmark.jp>",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/netmarkjp/pptrhtmltopdf/issues"
   },
