@@ -4,6 +4,13 @@ Export PDF from Websites or HTML Files.
 
 Alterative of [wkhtmltopdf](https://wkhtmltopdf.org/) but pptrhtmltopf uses Headless Chrome.
 
+- Add cover page :ok:
+- Add backcover page :ok:
+- Generate TOC page  :ok:
+- Support multi HTML :ok:
+- Support local HTML :ok:
+- Support Website :ok:
+
 Output PDF Example: [examples/output.pdf](examples/output.pdf)
 
 # Usage
