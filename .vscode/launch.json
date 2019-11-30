@@ -18,9 +18,11 @@
             ],
             "args": [
                 "--debug",
-                "tmp/build/index.html",
-                "tmp/build/chapter01/index.html",
-                "https://www.yahoo.co.jp"
+                "--cover=examples/cover-example.html",
+                "--backcover=examples/backcover-example.html",
+                "examples/first.html",
+                "examples/second.html",
+                "https://www.google.com"
             ]
         }
     ]

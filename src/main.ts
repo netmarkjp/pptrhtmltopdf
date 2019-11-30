@@ -16,11 +16,13 @@ type Config = {
     output: string
     cover?: string
     backcover?: string
+    tmpPath: string
 }
 
 const CONFIG: Config = {
     debug: false,
     output: "output.pdf",
+    tmpPath: os.tmpdir(),
 };
 
 function argParse(argv: string[]): [Map<string, string>, string[]] {
@@ -47,7 +49,7 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
     return [opts, args];
 }
 
-async function renderPages(urls: string[], tmpPath: string, pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
+async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
     let fileIndex: number = 0;
     const browser = await puppeteer.launch();
     for (const url of urls) {
@@ -57,7 +59,7 @@ async function renderPages(urls: string[], tmpPath: string, pdfOptions: PDFOptio
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        const outPath = path.join(tmpPath, outFileNumber + ".pdf");
+        const outPath = path.join(CONFIG.tmpPath, outFileNumber + ".pdf");
         if (CONFIG.debug) {
             console.log("DEBUG: tmpPDF.path=" + outPath);
         }
@@ -138,10 +140,8 @@ async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
         const font = await pdf.embedFont(StandardFonts.Courier);
         const pages = pdf.getPages();
         for (const page of pages) {
-            const { width, height } = page.getSize();
-            if (CONFIG.debug) {
-                console.log("DEBUG: width=" + width + ", heigth=" + height);
-            }
+            // const { width, height } = page.getSize();
+            const { width, } = page.getSize();
             page.drawText("" + currentPage + " / " + totalPages + "", {
                 x: width - 50,
                 y: 10,
@@ -156,24 +156,24 @@ async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
     }
 }
 
-async function renderPage(url: string, tmpPath: string, filename: string, pdfOptions: PDFOptions) {
+async function renderPage(url: string, filename: string, pdfOptions: PDFOptions) {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
 
-    const outPath = path.join(tmpPath, filename);
+    const outPath = path.join(CONFIG.tmpPath, filename);
     pdfOptions.path = outPath;
     await page.pdf(pdfOptions);
 
     await browser.close();
 }
 
-async function renderCovers(tmpPath: string, pdfOptions: PDFOptions) {
+async function renderCovers(pdfOptions: PDFOptions) {
     if (CONFIG.cover !== undefined) {
-        await renderPage(CONFIG.cover, tmpPath, "cover.pdf", pdfOptions);
+        await renderPage(CONFIG.cover, "cover.pdf", pdfOptions);
     }
     if (CONFIG.backcover !== undefined) {
-        await renderPage(CONFIG.backcover, tmpPath, "backcover.pdf", pdfOptions);
+        await renderPage(CONFIG.backcover, "backcover.pdf", pdfOptions);
     }
 }
 
@@ -197,18 +197,44 @@ async function concatPDF(tmpPDFs: TmpPDF[]) {
         }
         const pdf = await PDFDocument.load(fs.readFileSync(tmpPDF.path));
         let pageIndexes: number[] = [];
-        for(let i = 0; i < pdf.getPageCount(); i++){
+        for (let i = 0; i < pdf.getPageCount(); i++) {
             pageIndexes.push(i);
         }
         const pages = await basePDF.copyPages(pdf, pageIndexes);
-        
-        for(const page of pages){
+
+        for (const page of pages) {
             basePDF.addPage(page);
         }
     }
 
-    // TODO insert cover, toc
-    // TODO add backcover
+    // TODO insert toc
+
+    if (CONFIG.cover !== undefined) {
+        const pdf = await PDFDocument.load(fs.readFileSync(path.join(CONFIG.tmpPath, "cover.pdf")));
+        let pageIndexes: number[] = [];
+        for (let i = 0; i < pdf.getPageCount(); i++) {
+            pageIndexes.push(i);
+        }
+
+        const pages = await basePDF.copyPages(pdf, pageIndexes);
+        for (let i = pages.length - 1; i >= 0; i--) {
+            const page = pages[i];
+            basePDF.insertPage(0, page);
+        }
+    }
+
+    if (CONFIG.backcover !== undefined) {
+        const pdf = await PDFDocument.load(fs.readFileSync(path.join(CONFIG.tmpPath, "backcover.pdf")));
+        let pageIndexes: number[] = [];
+        for (let i = 0; i < pdf.getPageCount(); i++) {
+            pageIndexes.push(i);
+        }
+        const pages = await basePDF.copyPages(pdf, pageIndexes);
+        for (const page of pages) {
+            basePDF.addPage(page);
+        }
+    }
+
     const pdfBytes = await basePDF.save();
     fs.writeFileSync(CONFIG.output, pdfBytes);
 }
@@ -263,9 +289,14 @@ function main(argv: string[]): void {
     pdfOptions.format = "A4";
     pdfOptions.printBackground = true;
 
-    let tmpPath: string = fs.mkdtempSync(path.join(os.tmpdir(), 'pptrhtmltopdf-'));
+    CONFIG.tmpPath = fs.mkdtempSync(path.join(os.tmpdir(), 'pptrhtmltopdf-'));
+    if (CONFIG.debug) {
+        console.log("DEBUG: CONFIG=");
+        console.log(CONFIG);
+    }
+
     let tmpPDFs: TmpPDF[] = [];
-    renderPages(urls, tmpPath, pdfOptions, tmpPDFs).then(() => {
+    renderPages(urls, pdfOptions, tmpPDFs).then(() => {
         countPageNumbers(tmpPDFs).then(() => {
             if (CONFIG.debug) {
                 for (let tmpPDF of tmpPDFs) {
@@ -274,9 +305,10 @@ function main(argv: string[]): void {
                 }
             }
             printHeaderFooter(tmpPDFs).then(() => {
-                renderCovers(tmpPath, pdfOptions).then(() => {
-                        concatPDF(tmpPDFs);
+                renderCovers(pdfOptions).then(() => {
+                    concatPDF(tmpPDFs).then(()=> {
                         console.log("Wrote PDF to: " + CONFIG.output);
+                    });
                 });
             });
         });

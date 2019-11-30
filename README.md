@@ -52,7 +52,7 @@ NOTE:
 # TODO
 
 - Generate TOC
-- Print h1/h2 in TOC
+- Use h1/h2 in TOC
 - Footer formatting
 - Header
 - PDF page size customise
