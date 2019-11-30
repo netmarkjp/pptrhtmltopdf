@@ -8,6 +8,7 @@ type TmpPDF = {
     path?: string
     pages?: number
     title?: string
+    headers?: [string, string][]
 }
 
 function argParse(argv: string[]): [Map<string, string>, string[]] {
@@ -34,22 +35,55 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
 async function renderPages(urls: string[], tmpPath: string, pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
     let fileIndex: number = 0;
     const browser = await puppeteer.launch();
-    for (let url of urls) {
-        let outFileNumber = ("0000" + fileIndex).slice(-3);
-        let tmpPDF: TmpPDF = {};
+    for (const url of urls) {
+        const outFileNumber = ("0000" + fileIndex).slice(-3);
+        const tmpPDF: TmpPDF = {};
 
         const page = await browser.newPage();
         await page.goto(url, { waitUntil: 'networkidle2' });
 
-        let outPath = path.join(tmpPath, outFileNumber + ".pdf");
+        const outPath = path.join(tmpPath, outFileNumber + ".pdf");
         console.log(outPath);
 
         pdfOptions.path = outPath;
         tmpPDF.path = outPath;
         await page.pdf(pdfOptions);
 
+        let titleText: string = "";
+        const title = await page.$("title");
+        if (!(title === null)) {
+            const c = await title.getProperty("textContent");
+            const v = await c.jsonValue();
+            if (typeof v === "string") {
+                titleText = v;
+            }
+        }
+        tmpPDF.title = titleText;
+
         // TODO get title from page, put them to tmpPDF
-        // TODO get h1, h2 elements from page to tmpPDF
+        let tmpHeaders: [string, string][] = [];
+        const headers = await page.$$("h1, h2");
+        for (let header of headers) {
+            const tmpHeader: [string, string] = ["", ""];
+            const t = await header.getProperty("tagName");
+            const tagName = await t.jsonValue();
+            if (typeof tagName === "string" && tagName.toLowerCase() === "h1") {
+                tmpHeader[0] = "h1";
+            } else {
+                tmpHeader[0] = "h2";
+            }
+
+            // headerText
+            const c = await header.getProperty("textContent");
+            const headerText: string | unknown = await c.jsonValue();
+            if (typeof headerText === "string") {
+                tmpHeader[1] = headerText.replace("¶", "");
+            } else {
+                tmpHeader[1] = "";
+            }
+            tmpHeaders.push(tmpHeader);
+        }
+        tmpPDF.headers = tmpHeaders;
 
         returnTmpPDFs.push(tmpPDF);
         fileIndex++;
@@ -99,8 +133,6 @@ function main(argv: string[]): void {
             console.log("---");
         });
     });
-
-
 }
 
 main(process.argv);
