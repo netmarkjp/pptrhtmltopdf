@@ -112,7 +112,7 @@ function main(argv: string[]): void {
     const o = argParse(argv);
     // TODO use opts
     const opts: Map<string, string> = o[0];
-    if (opts.get("--debug")) {
+    if (opts.has("--debug")) {
         DEBUG = true;
         console.log("DEBUG: enabled");
     }

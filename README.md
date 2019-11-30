@@ -10,6 +10,7 @@ npm run-script build
 ```
 # run
 npm run-script run -- \
+    --debug \
     --cover=/path/to/cover.html \
     --backcover=/path/to/backcover.html \
     --footer="[currentPage]/[totalPage]" \
