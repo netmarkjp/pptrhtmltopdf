@@ -109,4 +109,4 @@ dist
 *.swo
 
 tmp/
-./output.pdf
+output.pdf

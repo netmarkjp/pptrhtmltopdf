@@ -358,10 +358,39 @@ function reformURL(url: string): string {
     return url;
 }
 
+function getVersion(): string {
+    const packageJSONPath = path.resolve(path.join(__dirname, "..", "package.json"));
+    const jsonObject = JSON.parse(fs.readFileSync(packageJSONPath).toString());
+    return jsonObject["version"];
+}
+
 function main(argv: string[]): void {
     const o = argParse(argv);
 
     const opts: Map<string, string> = o[0];
+    if (opts.has("--version")){
+        console.log("pptrhtmltopdf version: \""+getVersion()+"\"");
+        return;
+    }
+    if (opts.has("--help") || o[1].length === 0) {
+        const helpText = `
+NAME
+    pptrhtmltopdf [OPTIONS] [FILE or URL]...
+
+    Convert HTML to PDF using Chrome (Puppeteer)
+
+DESCRIPTION
+    --output=[FILE]    Save PDF to [FILE]
+    --cover=[FILE]     Use [FILE] to cover
+    --backcover=[FILE] Use [FILE] to backcover
+    --generate-toc     Generate TOC(Table of Contents)
+    --debug            Run in DEBUG mode
+    --version          Show version
+    --help             Show this help
+`;
+        console.log(helpText);
+        return;
+    }
     if (opts.has("--debug")) {
         CONFIG.debug = true;
         console.log("DEBUG: enabled");

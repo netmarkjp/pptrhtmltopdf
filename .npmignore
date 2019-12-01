@@ -1,0 +1,13 @@
+node_modules/
+.npm
+*.tgz
+.env
+.env.test
+.cache
+*.swp
+*.swo
+.DS_Store
+tmp/
+output.pdf
+.vscode/
+examples

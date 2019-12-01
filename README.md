@@ -1,5 +1,7 @@
 # pptrhtmltopdf
 
+Convert HTML to PDF using Chrome (Puppeteer)
+
 Export PDF from Websites or HTML Files.
 
 Alterative of [wkhtmltopdf](https://wkhtmltopdf.org/) but pptrhtmltopf uses Headless Chrome.
@@ -11,7 +13,7 @@ Alterative of [wkhtmltopdf](https://wkhtmltopdf.org/) but pptrhtmltopf uses Head
 - Support local HTML :ok:
 - Support Website :ok:
 
-Output PDF Example: [examples/output.pdf](examples/output.pdf)
+Output PDF Example: [examples/output-examples.pdf](examples/output-example.pdf)
 
 # Usage
 
