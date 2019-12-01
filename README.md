@@ -15,11 +15,52 @@ Alterative of [wkhtmltopdf](https://wkhtmltopdf.org/) but pptrhtmltopf uses Head
 
 Output PDF Example: [examples/output-examples.pdf](examples/output-example.pdf)
 
+# Install
+
+```bash
+npm install pptrhtmltopdf
+```
+
 # Usage
+
+```bash
+NAME
+    pptrhtmltopdf [OPTIONS] [FILE or URL]...
+
+    Convert HTML to PDF using Chrome (Puppeteer)
+
+DESCRIPTION
+    --output=[FILE]    Save PDF to [FILE]
+    --cover=[FILE]     Use [FILE] to cover
+    --backcover=[FILE] Use [FILE] to backcover
+    --generate-toc     Generate TOC(Table of Contents)
+    --debug            Run in DEBUG mode
+    --version          Show version
+    --help             Show this help
+```
+
+Run `pptrhtmltopdf` or `node_modules/.bin/pptrhtmltopdf`
+
+## Example
+
+### Capture https://github.com/netmarkjp/pptrhtmltopdf to `./output.pdf`
+
+```bash
+pptrhtmltopdf https://github.com/netmarkjp/pptrhtmltopdf
+```
+
+### Capture https://github.com/netmarkjp/pptrhtmltopdf/blob/master/README.md and https://github.com/netmarkjp/pptrhtmltopdf/blob/master/LICENSE to `docs.pdf` with TOC
+
+```bash
+pptrhtmltopdf --generate-toc --output=docs.pdf \
+    https://github.com/netmarkjp/pptrhtmltopdf/blob/master/README.md \
+    https://github.com/netmarkjp/pptrhtmltopdf/blob/master/LICENSE
+```
+
+# Development
 
 ```
 # build
-npm install
 npm run-script build
 ```
 
