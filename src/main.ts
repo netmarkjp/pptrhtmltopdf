@@ -20,6 +20,7 @@ type Config = {
     backcover?: string
     tmpPath: string
     generateTOC: boolean
+    noSandbox: boolean
 }
 
 const CONFIG: Config = {
@@ -27,6 +28,7 @@ const CONFIG: Config = {
     output: "output.pdf",
     tmpPath: os.tmpdir(),
     generateTOC: false,
+    noSandbox: false,
 };
 
 function argParse(argv: string[]): [Map<string, string>, string[]] {
@@ -55,7 +57,15 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
 
 async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
     let fileIndex: number = 0;
-    const browser = await puppeteer.launch();
+    const launchOptions: puppeteer.LaunchOptions = {};
+    if (CONFIG.noSandbox) {
+        if (launchOptions.args === undefined) {
+            launchOptions.args = [];
+        }
+        launchOptions.args.push('--no-sandbox');
+        launchOptions.args.push('-disable-setuid-sandbox');
+    }
+    const browser = await puppeteer.launch(launchOptions);
     for (const url of urls) {
         const outFileNumber = ("0000" + fileIndex).slice(-3);
         const tmpPDF: TmpPDF = {};
@@ -187,7 +197,15 @@ async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
 }
 
 async function renderPage(url: string, filename: string, pdfOptions: PDFOptions) {
-    const browser = await puppeteer.launch();
+    const launchOptions: puppeteer.LaunchOptions = {};
+    if (CONFIG.noSandbox) {
+        if (launchOptions.args === undefined) {
+            launchOptions.args = [];
+        }
+        launchOptions.args.push('--no-sandbox');
+        launchOptions.args.push('-disable-setuid-sandbox');
+    }
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.goto(url, { waitUntil: 'networkidle2' });
 
@@ -263,7 +281,15 @@ async function renderTOC(pdfOptions: PDFOptions, tmpPDFs: TmpPDF[]) {
     fs.writeFileSync(tocHTMLFile, tocHTMLBody, { encoding: "utf-8" });
 
     // render and save PDF
-    const browser = await puppeteer.launch();
+    const launchOptions: puppeteer.LaunchOptions = {};
+    if (CONFIG.noSandbox) {
+        if (launchOptions.args === undefined) {
+            launchOptions.args = [];
+        }
+        launchOptions.args.push('--no-sandbox');
+        launchOptions.args.push('-disable-setuid-sandbox');
+    }
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.goto(reformURL(tocHTMLFile), { waitUntil: 'networkidle2' });
 
@@ -368,8 +394,8 @@ function main(argv: string[]): void {
     const o = argParse(argv);
 
     const opts: Map<string, string> = o[0];
-    if (opts.has("--version")){
-        console.log("pptrhtmltopdf version: \""+getVersion()+"\"");
+    if (opts.has("--version")) {
+        console.log("pptrhtmltopdf version: \"" + getVersion() + "\"");
         return;
     }
     if (opts.has("--help") || o[1].length === 0) {
@@ -415,6 +441,9 @@ DESCRIPTION
     }
     if (opts.has("--generate-toc")) {
         CONFIG.generateTOC = true;
+    }
+    if (opts.has("--no-sandbox")) {
+        CONFIG.noSandbox = true;
     }
 
     const urls: string[] = [];

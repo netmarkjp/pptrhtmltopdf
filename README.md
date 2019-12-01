@@ -34,6 +34,7 @@ DESCRIPTION
     --cover=[FILE]     Use [FILE] to cover
     --backcover=[FILE] Use [FILE] to backcover
     --generate-toc     Generate TOC(Table of Contents)
+    --no-sandbox       Disable Chrome's sandboxing
     --debug            Run in DEBUG mode
     --version          Show version
     --help             Show this help
