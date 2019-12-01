@@ -93,7 +93,6 @@ NOTE:
 
 High
 
-- Release as CLI command
 - CI/CD
 
 Moderate
