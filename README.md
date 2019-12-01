@@ -4,7 +4,7 @@ Convert HTML to PDF using Chrome (Puppeteer)
 
 Export PDF from Websites or HTML Files.
 
-Alterative of [wkhtmltopdf](https://wkhtmltopdf.org/) but pptrhtmltopf uses Headless Chrome.
+Alterative of [wkhtmltopdf](https://wkhtmltopdf.org/) but pptrhtmltopdf uses Headless Chrome.
 
 - Add cover page :ok:
 - Add backcover page :ok:
@@ -56,6 +56,17 @@ pptrhtmltopdf https://github.com/netmarkjp/pptrhtmltopdf
 pptrhtmltopdf --generate-toc --output=docs.pdf \
     https://github.com/netmarkjp/pptrhtmltopdf/blob/master/README.md \
     https://github.com/netmarkjp/pptrhtmltopdf/blob/master/LICENSE
+```
+
+# Run on Docker
+
+```bash
+docker run --rm -it -v $(pwd):/mnt -w /mnt netmarkjp/pptrhtmltopdf \
+    pptrhtmltopdf --no-sandbox \
+        --generate-toc \
+        --output=/mnt/output.pdf \
+        https://github.com/netmarkjp/pptrhtmltopdf/blob/master/README.md \
+        https://github.com/netmarkjp/pptrhtmltopdf/blob/master/LICENSE
 ```
 
 # Development

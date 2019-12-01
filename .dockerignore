@@ -1,0 +1,8 @@
+*.swp
+*.swo
+.DS_Store
+
+tmp
+node_modules
+output.pdf
+pptrhtmltopdf-*.tgz
