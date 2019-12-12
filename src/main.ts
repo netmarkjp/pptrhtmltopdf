@@ -390,7 +390,7 @@ function getVersion(): string {
     return jsonObject["version"];
 }
 
-function main(argv: string[]): void {
+async function main(argv: string[]) {
     const o = argParse(argv);
 
     const opts: Map<string, string> = o[0];
@@ -465,25 +465,20 @@ DESCRIPTION
     }
 
     let tmpPDFs: TmpPDF[] = [];
-    renderPages(urls, pdfOptions, tmpPDFs).then(() => {
-        countPageNumbers(tmpPDFs).then(() => {
-            if (CONFIG.debug) {
-                for (let tmpPDF of tmpPDFs) {
-                    console.log("DEBUG: tmpPDF=");
-                    console.log(tmpPDF);
-                }
-            }
-            printHeaderFooter(tmpPDFs).then(() => {
-                renderCovers(pdfOptions).then(() => {
-                    renderTOC(pdfOptions, tmpPDFs).then(() => {
-                        concatPDF(tmpPDFs).then(() => {
-                            console.log("Wrote PDF to: " + CONFIG.output);
-                        });
-                    });
-                });
-            });
-        });
-    });
+
+    await renderPages(urls, pdfOptions, tmpPDFs);
+    await countPageNumbers(tmpPDFs);
+    if (CONFIG.debug) {
+        for (let tmpPDF of tmpPDFs) {
+            console.log("DEBUG: tmpPDF=");
+            console.log(tmpPDF);
+        }
+    }
+    await printHeaderFooter(tmpPDFs);
+    await renderCovers(pdfOptions);
+    await renderTOC(pdfOptions, tmpPDFs);
+    await concatPDF(tmpPDFs);
+    console.log("Wrote PDF to: " + CONFIG.output);
 }
 
 main(process.argv);
