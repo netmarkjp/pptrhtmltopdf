@@ -264,11 +264,19 @@ async function renderTOC(pdfOptions: PDFOptions, tmpPDFs: TmpPDF[]) {
 
     let pageOffset: number = 0;
     for (const tmpPDF of tmpPDFs) {
+        let prevHeaderPage: number = 1;
         if (tmpPDF.headers === undefined) {
             continue
         }
         for (const header of tmpPDF.headers) {
-            tocElements.push("<div class='toc toc-" + header[0] + "'><span class='description'>" + header[1] + "</span><span class='pageNumber'>" + (pageOffset + header[2]) + "</span></div>");
+            // if header[2] === 0 (in the case position cannot be detected), set position to previous header position(or the first page of same file)
+            let headerPage: number = header[2];
+            if ( headerPage === 0) {
+                headerPage = prevHeaderPage;
+            } else {
+                prevHeaderPage = headerPage;
+            }
+            tocElements.push("<div class='toc toc-" + header[0] + "'><span class='description'>" + header[1] + "</span><span class='pageNumber'>" + (pageOffset + headerPage) + "</span></div>");
         }
         if (tmpPDF.pages !== undefined) {
             pageOffset += tmpPDF.pages;
