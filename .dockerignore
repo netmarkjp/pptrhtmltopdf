@@ -1,6 +1,7 @@
 *.swp
 *.swo
 .DS_Store
+Dockerfile
 
 tmp
 node_modules

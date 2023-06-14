@@ -1,5 +1,5 @@
-FROM node:12-buster
-MAINTAINER Toshiaki Baba<baba@heartbeats.jp>
+FROM node:18.16-bookworm
+LABEL author="Toshiaki Baba<toshiaki@netmark.jp>"
 
 # install chromium dependencies
 RUN apt-get update \
@@ -17,11 +17,21 @@ RUN apt-get update \
         libatk-bridge2.0-0 \
         libgtk-3-0 \
         libx11-xcb1 \
+        libdrm2 \
+        libgbm1 \
         poppler-utils \
         fonts-noto-cjk \
         fonts-noto-cjk-extra \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+COPY . /root/pptrhtmltopdf
+
+ENV CHROME_VERSION=116.0.5829.0
+#ENV CHROME_VERSION=latest
+
+RUN npx @puppeteer/browsers install chrome@$CHROME_VERSION
+RUN npx @puppeteer/browsers install chromedriver@$CHROME_VERSION
 RUN cd /root/pptrhtmltopdf \
     && npm install pptrhtmltopdf \
     && ln -s /root/pptrhtmltopdf/node_modules/.bin/pptrhtmltopdf /usr/local/bin/pptrhtmltopdf
