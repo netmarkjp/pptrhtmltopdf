@@ -61,7 +61,7 @@ pptrhtmltopdf --generate-toc --output=docs.pdf \
 # Run on Docker
 
 ```bash
-docker run --rm -it -v $(pwd):/mnt -w /mnt netmarkjp/pptrhtmltopdf \
+docker run --rm -it -v $(pwd):/mnt -w /mnt ghcr.io/netmarkjp/pptrhtmltopdf \
         --generate-toc \
         --output=/mnt/output.pdf \
         https://github.com/netmarkjp/pptrhtmltopdf/blob/master/README.md \
