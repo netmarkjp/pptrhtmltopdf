@@ -1,4 +1,4 @@
-import puppeteer, { PDFOptions } from 'puppeteer';
+import puppeteer, { PuppeteerLaunchOptions, PDFOptions } from 'puppeteer';
 import os, { } from "os";
 import path, { } from "path";
 import fs, { } from "fs";
@@ -57,11 +57,12 @@ function argParse(argv: string[]): [Map<string, string>, string[]] {
 
 async function renderPages(urls: string[], pdfOptions: PDFOptions, returnTmpPDFs: TmpPDF[]) {
     let fileIndex: number = 0;
-    const launchOptions: puppeteer.LaunchOptions = {};
+    const launchOptions: PuppeteerLaunchOptions = {};
     if (CONFIG.noSandbox) {
         if (launchOptions.args === undefined) {
             launchOptions.args = [];
         }
+        launchOptions.headless = "new";
         launchOptions.args.push('--no-sandbox');
         launchOptions.args.push('-disable-setuid-sandbox');
     }
@@ -197,11 +198,12 @@ async function printHeaderFooter(tmpPDFs: TmpPDF[]) {
 }
 
 async function renderPage(url: string, filename: string, pdfOptions: PDFOptions) {
-    const launchOptions: puppeteer.LaunchOptions = {};
+    const launchOptions: PuppeteerLaunchOptions = {};
     if (CONFIG.noSandbox) {
         if (launchOptions.args === undefined) {
             launchOptions.args = [];
         }
+        launchOptions.headless = "new";
         launchOptions.args.push('--no-sandbox');
         launchOptions.args.push('-disable-setuid-sandbox');
     }
@@ -271,7 +273,7 @@ async function renderTOC(pdfOptions: PDFOptions, tmpPDFs: TmpPDF[]) {
         for (const header of tmpPDF.headers) {
             // if header[2] === 0 (in the case position cannot be detected), set position to previous header position(or the first page of same file)
             let headerPage: number = header[2];
-            if ( headerPage === 0) {
+            if (headerPage === 0) {
                 headerPage = prevHeaderPage;
             } else {
                 prevHeaderPage = headerPage;
@@ -289,11 +291,12 @@ async function renderTOC(pdfOptions: PDFOptions, tmpPDFs: TmpPDF[]) {
     fs.writeFileSync(tocHTMLFile, tocHTMLBody, { encoding: "utf-8" });
 
     // render and save PDF
-    const launchOptions: puppeteer.LaunchOptions = {};
+    const launchOptions: PuppeteerLaunchOptions = {};
     if (CONFIG.noSandbox) {
         if (launchOptions.args === undefined) {
             launchOptions.args = [];
         }
+        launchOptions.headless = "new";
         launchOptions.args.push('--no-sandbox');
         launchOptions.args.push('-disable-setuid-sandbox');
     }

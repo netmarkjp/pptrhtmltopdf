@@ -95,11 +95,11 @@ NOTE:
 
 # Stack
 
-- Node 12
-- Puppeteer 2.0
+- Node 18
+- Puppeteer 20.7
 - pdf-lib 1.2
 - pdf-tex-extract 1.5
-- TypeScript 3.7
+- TypeScript 5.1
 
 # TODO
 
