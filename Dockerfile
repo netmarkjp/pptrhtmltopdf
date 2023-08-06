@@ -25,15 +25,20 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /root/pptrhtmltopdf
+COPY . /opt/pptrhtmltopdf
+RUN chown -R node:node /opt/pptrhtmltopdf
 
 ENV CHROME_VERSION=116.0.5829.0
 #ENV CHROME_VERSION=latest
 
 RUN npx @puppeteer/browsers install chrome@$CHROME_VERSION
 RUN npx @puppeteer/browsers install chromedriver@$CHROME_VERSION
-RUN cd /root/pptrhtmltopdf \
-    && npm install pptrhtmltopdf \
-    && ln -s /root/pptrhtmltopdf/node_modules/.bin/pptrhtmltopdf /usr/local/bin/pptrhtmltopdf
+
+RUN ln -s /opt/pptrhtmltopdf/node_modules/.bin/pptrhtmltopdf /usr/local/bin/pptrhtmltopdf || :
+RUN chmod 777 /mnt
+
+USER node
+RUN cd /opt/pptrhtmltopdf \
+    && npm install pptrhtmltopdf
 
 ENTRYPOINT ["/usr/local/bin/pptrhtmltopdf", "--no-sandbox"]
